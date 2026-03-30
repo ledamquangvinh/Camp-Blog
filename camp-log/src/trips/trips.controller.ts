@@ -8,15 +8,13 @@ import {
   Delete,
   Query,
   UseGuards,
-  Req,
-  ForbiddenException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
+import { TripOwnerGuard } from 'src/common/guards/trip-owner.guard';
 
 @Controller('trips')
 export class TripsController {
@@ -40,34 +38,19 @@ export class TripsController {
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesGuard, TripOwnerGuard)
   @Roles('admin', 'creator')
   async update(
     @Param('id') id: string,
     @Body() updateTripDto: UpdateTripDto,
-    @Req() req: Request,
   ) {
-    const user = (req as any).user;
-    const trip = await this.tripsService.findOne(id);
-
-    if (user.role !== 'admin' && trip.userId.toString() !== user.sub) {
-      throw new ForbiddenException('You can only update your own trip');
-    }
-
     return this.tripsService.update(id, updateTripDto);
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesGuard, TripOwnerGuard)
   @Roles('admin', 'creator')
-  async remove(@Param('id') id: string, @Req() req: Request) {
-    const user = (req as any).user;
-    const trip = await this.tripsService.findOne(id);
-
-    if (user.role !== 'admin' && trip.userId.toString() !== user.sub) {
-      throw new ForbiddenException('You can only delete your own trip');
-    }
-
+  async remove(@Param('id') id: string) {
     return this.tripsService.remove(id);
   }
 }
