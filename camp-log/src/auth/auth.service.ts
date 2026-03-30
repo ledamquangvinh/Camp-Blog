@@ -1,3 +1,4 @@
+import * as bcrypt from 'bcrypt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,11 +12,15 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(name: string): Promise<{ token: string }> {
-    const user = await this.userModel.findOne({ name }).exec();
+  async login(username: string, password: string): Promise<{ token: string }> {
+    const user = await this.userModel.findOne({ username }).exec();
 
     if (!user) {
       throw new UnauthorizedException('Invalid user');
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     // Create JWT payload

@@ -4,15 +4,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../../schema/user.schema';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  constructor(private jwtService: JwtService) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'] as string;
@@ -27,14 +23,15 @@ export class AuthMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Invalid token format');
     }
 
-    const user = await this.userModel.findById(token);
+    try {
+      const payload = this.jwtService.verify(token);
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+      // 🔥 attach decoded payload (user info)
+      (req as any).user = payload;
+
+    } catch (err) {
+      throw new UnauthorizedException('Invalid token');
     }
-
-    // 🔥 attach user to request
-    (req as any).user = user;
 
     next();
   }
