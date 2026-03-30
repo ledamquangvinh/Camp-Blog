@@ -10,8 +10,12 @@ export class TripsService {
   constructor(@InjectModel(Trip.name) private tripModel: Model<TripDocument>) {}
 
   // CREATE
-  async create(createTripDto: CreateTripDto): Promise<Trip> {
-    const createdTrip = new this.tripModel(createTripDto);
+  async create(createTripDto: CreateTripDto, userId: string): Promise<Trip> {
+    const createdTrip = new this.tripModel({
+      ...createTripDto,
+      userId,
+    });
+
     return createdTrip.save();
   }
 
@@ -51,6 +55,14 @@ export class TripsService {
     }
 
     return trip;
+  }
+
+  //find Owner of teh trip by id
+  async findOwnerById(id: string): Promise<{ userId: any } | null> {
+    return this.tripModel
+      .findById(id)
+      .select('userId') // ONLY fetch owner
+      .exec();
   }
 
   // UPDATE

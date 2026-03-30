@@ -24,7 +24,7 @@ export class TripOwnerGuard implements CanActivate {
       return true;
     }
 
-    const trip = await this.tripsService.findOne(tripId);
+    const trip = await this.tripsService.findOwnerById(tripId);
 
     if (!trip) {
       throw new ForbiddenException('Trip not found');
