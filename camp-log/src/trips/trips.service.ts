@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Trip, TripDocument } from '../schema/trip.schema';
 
 @Injectable()
@@ -62,6 +62,21 @@ export class TripsService {
     return this.tripModel
       .findById(id)
       .select('userId') // ONLY fetch owner
+      .exec();
+  }
+
+  // READ MY TRIPS
+  async findByUser(userId: string): Promise<Trip[]> {
+    return this.tripModel
+      .find({
+        userId,
+        // $or: [
+        //   { userId: userId }, // for string-stored userId
+        //   { userId: new Types.ObjectId(userId) }, // for ObjectId-stored userId
+        // ],
+        deletedAt: null,
+      })
+      .populate('userId', 'name role')
       .exec();
   }
 

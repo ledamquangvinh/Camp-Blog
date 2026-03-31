@@ -8,8 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TripsService } from './trips.service';
@@ -24,14 +24,22 @@ export class TripsController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles('admin', 'creator')
-  create(@Body() createTripDto: CreateTripDto, @Req() req: Request) {
-    const user = (req as any).user;
-    return this.tripsService.create(createTripDto, user.sub);
+  create(
+    @Body() createTripDto: CreateTripDto,
+    @CurrentUser('sub') userId: string,
+  ) {
+    return this.tripsService.create(createTripDto, userId);
   }
 
   @Get()
   findAll(@Query() query: any) {
     return this.tripsService.findAll(query);
+  }
+
+  @Get('me')
+  @UseGuards(RolesGuard)
+  getMyTrips(@CurrentUser('sub') userId: string) {
+    return this.tripsService.findByUser(userId);
   }
 
   @Get(':id')
